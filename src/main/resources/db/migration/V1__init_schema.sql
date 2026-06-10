@@ -11,13 +11,13 @@ CREATE TABLE job_offers (
     title VARCHAR(200) NOT NULL,
     status VARCHAR(50) NOT NULL,
     location_type VARCHAR(50),
-    address_line1 VARCHAR(100),
-    address_line2 VARCHAR(100),
-    address_line3 VARCHAR(100),
-    address_postal_code VARCHAR(20),
-    address_city VARCHAR(100),
-    address_region VARCHAR(100),
-    address_country_code CHAR(2),
+    line1 VARCHAR(100),
+    line2 VARCHAR(100),
+    line3 VARCHAR(100),
+    postal_code VARCHAR(20),
+    city VARCHAR(100),
+    region VARCHAR(100),
+    country_code VARCHAR(2),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     published_at TIMESTAMP
@@ -28,7 +28,7 @@ CREATE TABLE salary_entries (
     job_offer_id UUID NOT NULL REFERENCES job_offers(id),
     type VARCHAR(50) NOT NULL,
     amount NUMERIC(19,2) NOT NULL,
-    currency CHAR(3) NOT NULL
+    currency VARCHAR(3) NOT NULL
 );
 
 CREATE TABLE bonus_entries (
@@ -36,5 +36,5 @@ CREATE TABLE bonus_entries (
     job_offer_id UUID NOT NULL REFERENCES job_offers(id),
     type VARCHAR(50) NOT NULL,
     amount NUMERIC(19,2) NOT NULL,
-    currency CHAR(3) NOT NULL
+    currency VARCHAR(3) NOT NULL
 );
