@@ -28,4 +28,10 @@ public class GlobalExceptionHandler {
             .collect(Collectors.joining(", "));
         return ResponseEntity.status(400).body(new ErrorResponse(message));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(400).body(new ErrorResponse(ex.getMessage()));
+    }
+
 }

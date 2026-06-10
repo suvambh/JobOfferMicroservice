@@ -22,12 +22,19 @@ public class JobOfferController {
 
     @PostMapping
     public ResponseEntity<JobOfferResponse> create(@Valid @RequestBody JobOfferRequest request) {
+        // compensation check
+        if ((request.salaryEntries() == null || request.salaryEntries().isEmpty()) &&
+            (request.bonusEntries() == null || request.bonusEntries().isEmpty())) {
+            throw new IllegalArgumentException("At least one compensation entry is required");
+        }
+
         JobOffer offer = new JobOffer(request.companyId(), request.title(), request.locationType(), request.address());
         addEntries(offer, request);
         jobOfferRepository.save(offer);
         CompanyConfig config = getConfig(request.companyId());
         return ResponseEntity.status(201).body(toResponse(offer, config));
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<JobOfferResponse> update(@PathVariable UUID id, @Valid @RequestBody JobOfferRequest request) {
