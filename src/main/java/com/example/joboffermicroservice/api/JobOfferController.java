@@ -3,6 +3,7 @@ package com.example.joboffermicroservice.api;
 import com.example.joboffermicroservice.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public class JobOfferController {
     }
 
     @PostMapping
-    public ResponseEntity<JobOfferResponse> create(@RequestBody JobOfferRequest request) {
+    public ResponseEntity<JobOfferResponse> create(@Valid @RequestBody JobOfferRequest request) {
         JobOffer offer = new JobOffer(request.companyId(), request.title(), request.locationType(), request.address());
         addEntries(offer, request);
         jobOfferRepository.save(offer);
@@ -29,7 +30,7 @@ public class JobOfferController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<JobOfferResponse> update(@PathVariable UUID id, @RequestBody JobOfferRequest request) {
+    public ResponseEntity<JobOfferResponse> update(@PathVariable UUID id, @Valid @RequestBody JobOfferRequest request) {
         JobOffer offer = jobOfferRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
         if (offer.getStatus() != JobOfferStatus.DRAFT && offer.getStatus() != JobOfferStatus.TO_FINALIZE)

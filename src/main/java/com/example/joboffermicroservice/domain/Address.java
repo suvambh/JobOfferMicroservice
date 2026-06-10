@@ -1,15 +1,29 @@
 package com.example.joboffermicroservice.domain;
 
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Embeddable
 public class Address {
+
+    @Size(max = 100)
     private String line1;
+
+    @Size(max = 100)
     private String line2;
+
+    @Size(max = 100)
     private String line3;
+
     private String postalCode;
+
+    @NotBlank
     private String city;
+
     private String region;
+
+    @Size(min = 2, max = 2)
     private String countryCode;
 
     public Address() {}
