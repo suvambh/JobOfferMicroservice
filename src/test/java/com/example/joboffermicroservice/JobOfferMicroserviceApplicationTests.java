@@ -1,4 +1,4 @@
-package com.example.JobOfferMicroservice;
+package com.example.joboffermicroservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
