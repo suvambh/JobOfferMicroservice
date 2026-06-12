@@ -5,6 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+
 import java.util.List;
 import java.util.UUID;
 
@@ -22,16 +26,18 @@ public class JobOfferController {
 
     @PostMapping
     public ResponseEntity<JobOfferResponse> create(@Valid @RequestBody JobOfferRequest request) {
-        // compensation check
-        if ((request.salaryEntries() == null || request.salaryEntries().isEmpty()) &&
-            (request.bonusEntries() == null || request.bonusEntries().isEmpty())) {
-            throw new IllegalArgumentException("At least one compensation entry is required");
+        CompanyConfig config = getConfig(request.companyId());
+
+        if (!config.isPartialSaveEnabled()) {
+            if ((request.salaryEntries() == null || request.salaryEntries().isEmpty()) &&
+                (request.bonusEntries() == null || request.bonusEntries().isEmpty())) {
+                throw new IllegalArgumentException("At least one compensation entry is required");
+            }
         }
 
         JobOffer offer = new JobOffer(request.companyId(), request.title(), request.locationType(), request.address());
         addEntries(offer, request);
         jobOfferRepository.save(offer);
-        CompanyConfig config = getConfig(request.companyId());
         return ResponseEntity.status(201).body(toResponse(offer, config));
     }
 
@@ -59,17 +65,27 @@ public class JobOfferController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JobOfferResponse>> list(
+    public ResponseEntity<Page<JobOfferResponse>> list(
             @RequestParam(required = false) UUID companyId,
-            @RequestParam(required = false) JobOfferStatus status) {
-        List<JobOffer> offers = jobOfferRepository.findAll();
-        if (companyId != null) offers = offers.stream().filter(o -> o.getCompanyId().equals(companyId)).toList();
-        if (status != null) offers = offers.stream().filter(o -> o.getStatus() == status).toList();
-        List<JobOfferResponse> responses = offers.stream()
-                .map(o -> toResponse(o, getConfig(o.getCompanyId())))
-                .toList();
+            @RequestParam(required = false) JobOfferStatus status,
+            Pageable pageable) {
+
+        Page<JobOffer> offers;
+
+        if (companyId != null && status != null) {
+            offers = jobOfferRepository.findByCompanyIdAndStatus(companyId, status, pageable);
+        } else if (companyId != null) {
+            offers = jobOfferRepository.findByCompanyId(companyId, pageable);
+        } else if (status != null) {
+            offers = jobOfferRepository.findByStatus(status, pageable);
+        } else {
+            offers = jobOfferRepository.findAll(pageable);
+        }
+
+        Page<JobOfferResponse> responses = offers.map(o -> toResponse(o, getConfig(o.getCompanyId())));
         return ResponseEntity.ok(responses);
     }
+
 
     @PostMapping("/{id}/submit")
     public ResponseEntity<JobOfferResponse> submit(@PathVariable UUID id) {

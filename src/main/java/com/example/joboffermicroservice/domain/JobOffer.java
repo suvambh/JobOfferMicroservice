@@ -53,21 +53,32 @@ public class JobOffer {
     public void submit(CompanyConfig config) {
         if (this.status != JobOfferStatus.DRAFT)
             throw new IllegalStateTransitionException("Cannot submit from status: " + this.status);
-        if (config.isPartialSaveEnabled()) this.status = JobOfferStatus.TO_FINALIZE;
-        else if (config.isApprovalRequired()) this.status = JobOfferStatus.TO_APPROVE;
-        else if (config.isManualPostingRequired()) this.status = JobOfferStatus.TO_POST;
-        else { this.status = JobOfferStatus.PUBLISHED; this.publishedAt = Instant.now(); }
-        this.updatedAt = Instant.now();
-    }
-
-    public void finalize(CompanyConfig config) {
-        if (this.status != JobOfferStatus.TO_FINALIZE)
-            throw new IllegalStateTransitionException("Cannot finalize from status: " + this.status);
+        if (!isComplete()) {
+            if (config.isPartialSaveEnabled()) {
+                this.status = JobOfferStatus.TO_FINALIZE;
+                this.updatedAt = Instant.now();
+                return;
+            }
+            throw new IllegalArgumentException("Cannot submit an incomplete job offer");
+        }
         if (config.isApprovalRequired()) this.status = JobOfferStatus.TO_APPROVE;
         else if (config.isManualPostingRequired()) this.status = JobOfferStatus.TO_POST;
         else { this.status = JobOfferStatus.PUBLISHED; this.publishedAt = Instant.now(); }
         this.updatedAt = Instant.now();
     }
+
+
+    public void finalize(CompanyConfig config) {
+        if (this.status != JobOfferStatus.TO_FINALIZE)
+            throw new IllegalStateTransitionException("Cannot finalize from status: " + this.status);
+        if (!isComplete())
+            throw new IllegalArgumentException("Cannot finalize an incomplete job offer");
+        if (config.isApprovalRequired()) this.status = JobOfferStatus.TO_APPROVE;
+        else if (config.isManualPostingRequired()) this.status = JobOfferStatus.TO_POST;
+        else { this.status = JobOfferStatus.PUBLISHED; this.publishedAt = Instant.now(); }
+        this.updatedAt = Instant.now();
+    }
+
 
     public void approve(CompanyConfig config) {
         if (this.status != JobOfferStatus.TO_APPROVE)
@@ -105,6 +116,15 @@ public class JobOffer {
         this.status = JobOfferStatus.CLOSED;
         this.updatedAt = Instant.now();
     }
+
+    // --- Private helpers ---
+
+    private boolean isComplete() {
+        return title != null && !title.isBlank()
+            && locationType != null
+            && (!salaryEntries.isEmpty() || !bonusEntries.isEmpty());
+    }
+
 
     // --- Computed ---
 
