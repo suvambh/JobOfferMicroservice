@@ -8,9 +8,9 @@ CREATE TABLE company_config (
 CREATE TABLE job_offers (
     id UUID PRIMARY KEY,
     company_id UUID NOT NULL,
-    title VARCHAR(200) NOT NULL,
+    title VARCHAR(200),
     status VARCHAR(50) NOT NULL,
-    location_type VARCHAR(50),
+    location_type VARCHAR(50), 
     line1 VARCHAR(100),
     line2 VARCHAR(100),
     line3 VARCHAR(100),
