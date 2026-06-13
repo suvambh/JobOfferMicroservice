@@ -110,7 +110,7 @@ public class JobOfferService {
         }
     }
 
-    private CompanyConfig getConfig(UUID companyId) {
+    public CompanyConfig getConfig(UUID companyId) {
         return companyConfigRepository.findById(companyId)
                 .orElse(new CompanyConfig(companyId, false, false, false));
     }
