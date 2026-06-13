@@ -99,6 +99,14 @@ public class JobOfferService {
         return jobOfferRepository.save(offer);
     }
 
+    public JobOffer expire(UUID id) {
+    JobOffer offer = jobOfferRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
+
+    offer.expire();
+
+    return jobOfferRepository.save(offer);
+}
     // --- Helpers ---
 
     private void validateCompensation(JobOfferRequest request, CompanyConfig config) {

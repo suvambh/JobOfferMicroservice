@@ -37,7 +37,7 @@ public class JobOfferController {
     @GetMapping("/{id}")
     public ResponseEntity<JobOfferResponse> getById(@PathVariable UUID id) {
         JobOffer offer = jobOfferService.getById(id);
-        CompanyConfig config = jobOfferService.getConfig(id);
+        CompanyConfig config = jobOfferService.getConfig(offer.getCompanyId());
         return ResponseEntity.ok(toResponse(offer, config));
     }
 
@@ -79,6 +79,11 @@ public class JobOfferController {
     @PostMapping("/{id}/close")
     public ResponseEntity<JobOfferResponse> close(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(jobOfferService.close(id)));
+    }
+
+    @PostMapping("/{id}/expire")
+    public ResponseEntity<JobOfferResponse> expire(@PathVariable UUID id) {
+        return ResponseEntity.ok(toResponse(jobOfferService.expire(id)));
     }
 
     // --- Helpers ---
