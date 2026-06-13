@@ -16,52 +16,28 @@ import java.util.UUID;
 @RequestMapping("/job-offers")
 public class JobOfferController {
 
-    private final JobOfferRepository jobOfferRepository;
-    private final CompanyConfigRepository companyConfigRepository;
+    private final JobOfferService jobOfferService;
 
-    public JobOfferController(JobOfferRepository jobOfferRepository, CompanyConfigRepository companyConfigRepository) {
-        this.jobOfferRepository = jobOfferRepository;
-        this.companyConfigRepository = companyConfigRepository;
+    public JobOfferController(JobOfferService jobOfferService) {
+        this.jobOfferService = jobOfferService;
     }
 
     @PostMapping
     public ResponseEntity<JobOfferResponse> create(@Valid @RequestBody JobOfferRequest request) {
-        CompanyConfig config = getConfig(request.companyId());
-
-        if (!config.isPartialSaveEnabled()) {
-            if ((request.salaryEntries() == null || request.salaryEntries().isEmpty()) &&
-                (request.bonusEntries() == null || request.bonusEntries().isEmpty())) {
-                throw new IllegalArgumentException("At least one compensation entry is required");
-            }
-        }
-
-        JobOffer offer = new JobOffer(request.companyId(), request.title(), request.locationType(), request.address());
-        addEntries(offer, request);
-        jobOfferRepository.save(offer);
-        return ResponseEntity.status(201).body(toResponse(offer, config));
+        JobOffer offer = jobOfferService.create(request);
+        return ResponseEntity.status(201).body(toResponse(offer));
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<JobOfferResponse> update(@PathVariable UUID id, @Valid @RequestBody JobOfferRequest request) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        if (offer.getStatus() != JobOfferStatus.DRAFT && offer.getStatus() != JobOfferStatus.TO_FINALIZE)
-            throw new IllegalStateTransitionException("Cannot update offer in status: " + offer.getStatus());
-        offer.setTitle(request.title());
-        offer.setLocationType(request.locationType());
-        offer.setAddress(request.address());
-        jobOfferRepository.save(offer);
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        return ResponseEntity.ok(toResponse(offer, config));
+        JobOffer offer = jobOfferService.update(id, request);
+        return ResponseEntity.ok(toResponse(offer));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<JobOfferResponse> getById(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        return ResponseEntity.ok(toResponse(offer, config));
+        JobOffer offer = jobOfferService.getById(id);
+        return ResponseEntity.ok(toResponse(offer));
     }
 
     @GetMapping
@@ -69,99 +45,44 @@ public class JobOfferController {
             @RequestParam(required = false) UUID companyId,
             @RequestParam(required = false) JobOfferStatus status,
             Pageable pageable) {
-
-        Page<JobOffer> offers;
-
-        if (companyId != null && status != null) {
-            offers = jobOfferRepository.findByCompanyIdAndStatus(companyId, status, pageable);
-        } else if (companyId != null) {
-            offers = jobOfferRepository.findByCompanyId(companyId, pageable);
-        } else if (status != null) {
-            offers = jobOfferRepository.findByStatus(status, pageable);
-        } else {
-            offers = jobOfferRepository.findAll(pageable);
-        }
-
-        Page<JobOfferResponse> responses = offers.map(o -> toResponse(o, getConfig(o.getCompanyId())));
+        Page<JobOfferResponse> responses = jobOfferService.list(companyId, status, pageable)
+                .map(this::toResponse);
         return ResponseEntity.ok(responses);
     }
 
-
     @PostMapping("/{id}/submit")
     public ResponseEntity<JobOfferResponse> submit(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        offer.submit(config);
-        jobOfferRepository.save(offer);
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(jobOfferService.submit(id)));
     }
 
     @PostMapping("/{id}/finalize")
     public ResponseEntity<JobOfferResponse> finalize(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        offer.finalize(config);
-        jobOfferRepository.save(offer);
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(jobOfferService.finalize(id)));
     }
 
     @PostMapping("/{id}/approve")
     public ResponseEntity<JobOfferResponse> approve(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        offer.approve(config);
-        jobOfferRepository.save(offer);
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(jobOfferService.approve(id)));
     }
 
     @PostMapping("/{id}/reject")
     public ResponseEntity<JobOfferResponse> reject(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        offer.reject();
-        jobOfferRepository.save(offer);
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(jobOfferService.reject(id)));
     }
 
     @PostMapping("/{id}/post")
     public ResponseEntity<JobOfferResponse> post(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        offer.post();
-        jobOfferRepository.save(offer);
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(jobOfferService.post(id)));
     }
 
     @PostMapping("/{id}/close")
     public ResponseEntity<JobOfferResponse> close(@PathVariable UUID id) {
-        JobOffer offer = jobOfferRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Job offer not found: " + id));
-        offer.close();
-        jobOfferRepository.save(offer);
-        CompanyConfig config = getConfig(offer.getCompanyId());
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(jobOfferService.close(id)));
     }
 
     // --- Helpers ---
 
-    private CompanyConfig getConfig(UUID companyId) {
-        return companyConfigRepository.findById(companyId)
-                .orElse(new CompanyConfig(companyId, false, false, false));
-    }
-
-    private void addEntries(JobOffer offer, JobOfferRequest request) {
-        if (request.salaryEntries() != null)
-            request.salaryEntries().forEach(e -> offer.getSalaryEntries().add(new SalaryEntry(offer, e.type(), e.amount(), e.currency())));
-        if (request.bonusEntries() != null)
-            request.bonusEntries().forEach(e -> offer.getBonusEntries().add(new BonusEntry(offer, e.type(), e.amount(), e.currency())));
-    }
-
-    private JobOfferResponse toResponse(JobOffer offer, CompanyConfig config) {
+    private JobOfferResponse toResponse(JobOffer offer) {
         List<SalaryEntryResponse> salaries = offer.getSalaryEntries().stream()
                 .map(e -> new SalaryEntryResponse(e.getId(), e.getType(), e.getAmount(), e.getCurrency()))
                 .toList();
