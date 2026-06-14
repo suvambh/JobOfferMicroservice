@@ -1,4 +1,4 @@
-package com.example.joboffermicroservice.api;
+package com.example.joboffermicroservice.api.dto;
 
 import java.util.UUID;
 

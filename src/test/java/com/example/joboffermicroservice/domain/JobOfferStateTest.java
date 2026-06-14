@@ -1,5 +1,7 @@
 package com.example.joboffermicroservice.domain;
 
+import com.example.joboffermicroservice.domain.exception.IllegalStateTransitionException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

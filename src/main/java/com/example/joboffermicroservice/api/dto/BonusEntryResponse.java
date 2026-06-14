@@ -1,4 +1,4 @@
-package com.example.joboffermicroservice.api;
+package com.example.joboffermicroservice.api.dto;
 
 import com.example.joboffermicroservice.domain.BonusType;
 import java.math.BigDecimal;

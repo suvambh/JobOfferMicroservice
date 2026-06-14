@@ -1,6 +1,6 @@
 package com.example.joboffermicroservice.api.exception;
 
-import com.example.joboffermicroservice.domain.IllegalStateTransitionException;
+import com.example.joboffermicroservice.domain.exception.IllegalStateTransitionException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;

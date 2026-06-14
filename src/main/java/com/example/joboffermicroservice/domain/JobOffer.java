@@ -1,5 +1,8 @@
 package com.example.joboffermicroservice.domain;
 
+import com.example.joboffermicroservice.domain.exception.IllegalStateTransitionException;
+
+
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;

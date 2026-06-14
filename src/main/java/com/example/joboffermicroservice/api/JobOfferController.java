@@ -1,5 +1,10 @@
 package com.example.joboffermicroservice.api;
 
+import com.example.joboffermicroservice.api.dto.BonusEntryResponse;
+import com.example.joboffermicroservice.api.dto.JobOfferRequest;
+import com.example.joboffermicroservice.api.dto.JobOfferResponse;
+import com.example.joboffermicroservice.api.dto.SalaryEntryResponse;
+import com.example.joboffermicroservice.application.JobOfferService;
 import com.example.joboffermicroservice.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

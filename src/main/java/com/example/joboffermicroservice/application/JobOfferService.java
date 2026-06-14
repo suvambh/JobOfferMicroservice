@@ -2,7 +2,7 @@ package com.example.joboffermicroservice.application;
 
 import com.example.joboffermicroservice.api.dto.JobOfferRequest;
 import com.example.joboffermicroservice.api.exception.NotFoundException;
-
+import com.example.joboffermicroservice.domain.exception.IllegalStateTransitionException;
 import com.example.joboffermicroservice.domain.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
