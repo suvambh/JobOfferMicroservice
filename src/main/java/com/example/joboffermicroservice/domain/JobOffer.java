@@ -131,38 +131,17 @@ public class JobOffer {
 
     // --- Computed ---
 
-    public List<String> getAvailableTransitions(CompanyConfig config) {
+    public List<String> getAvailableTransitions() {
         return switch (this.status) {
-            case DRAFT -> {
-                String target = config.isPartialSaveEnabled()
-                        ? "TO_FINALIZE"
-                        : config.isApprovalRequired()
-                        ? "TO_APPROVE"
-                        : config.isManualPostingRequired()
-                        ? "TO_POST"
-                        : "PUBLISHED";
-                yield List.of("submit → " + target);
-            }
-            case TO_FINALIZE -> {
-                String target = config.isApprovalRequired()
-                        ? "TO_APPROVE"
-                        : config.isManualPostingRequired()
-                        ? "TO_POST"
-                        : "PUBLISHED";
-                yield List.of("finalize → " + target);
-            }
-            case TO_APPROVE -> List.of(
-                    "approve → " + (config.isManualPostingRequired() ? "TO_POST" : "PUBLISHED"),
-                    "reject → DRAFT"
-            );
-            case TO_POST -> List.of("post → PUBLISHED");
-            case PUBLISHED -> List.of(
-                    "close → CLOSED",
-                    "expire → CLOSED"
-            );
+            case DRAFT -> List.of("submit");
+            case TO_FINALIZE -> List.of("finalize");
+            case TO_APPROVE -> List.of("approve", "reject");
+            case TO_POST -> List.of("post");
+            case PUBLISHED -> List.of("close", "expire");
             case CLOSED -> List.of();
         };
     }
+
 
 
     // --- Getters ---

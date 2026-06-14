@@ -42,8 +42,7 @@ public class JobOfferController {
     @GetMapping("/{id}")
     public ResponseEntity<JobOfferResponse> getById(@PathVariable UUID id) {
         JobOffer offer = jobOfferService.getById(id);
-        CompanyConfig config = jobOfferService.getConfig(offer.getCompanyId());
-        return ResponseEntity.ok(toResponse(offer, config));
+        return ResponseEntity.ok(toResponse(offer));
     }
 
     @GetMapping
@@ -94,14 +93,6 @@ public class JobOfferController {
     // --- Helpers ---
 
     private JobOfferResponse toResponse(JobOffer offer) {
-        return buildResponse(offer, List.of());
-    }
-
-    private JobOfferResponse toResponse(JobOffer offer, CompanyConfig config) {
-        return buildResponse(offer, offer.getAvailableTransitions(config));
-    }
-
-    private JobOfferResponse buildResponse(JobOffer offer, List<String> transitions) {
         List<SalaryEntryResponse> salaries = offer.getSalaryEntries().stream()
                 .map(e -> new SalaryEntryResponse(e.getId(), e.getType(), e.getAmount(), e.getCurrency()))
                 .toList();
@@ -112,8 +103,9 @@ public class JobOfferController {
                 offer.getId(), offer.getCompanyId(), offer.getTitle(), offer.getStatus(),
                 offer.getLocationType(), offer.getAddress(), salaries, bonuses,
                 offer.getCreatedAt(), offer.getUpdatedAt(), offer.getPublishedAt(),
-                transitions
+                offer.getAvailableTransitions()
         );
     }
+
 
 }
