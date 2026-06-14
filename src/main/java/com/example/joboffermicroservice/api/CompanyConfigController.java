@@ -2,8 +2,12 @@ package com.example.joboffermicroservice.api;
 
 import com.example.joboffermicroservice.domain.CompanyConfig;
 import com.example.joboffermicroservice.domain.CompanyConfigRepository;
+import com.example.joboffermicroservice.api.dto.CompanyConfigResponse;
+import com.example.joboffermicroservice.api.dto.CompanyConfigRequest;
+import com.example.joboffermicroservice.api.exception.NotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.UUID;
 

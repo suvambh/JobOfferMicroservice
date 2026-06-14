@@ -1,4 +1,4 @@
-package com.example.joboffermicroservice.api;
+package com.example.joboffermicroservice.api.exception;
 
 import com.example.joboffermicroservice.domain.IllegalStateTransitionException;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,7 @@
-package com.example.joboffermicroservice.api;
+package com.example.joboffermicroservice.application;
+
+import com.example.joboffermicroservice.api.dto.JobOfferRequest;
+import com.example.joboffermicroservice.api.exception.NotFoundException;
 
 import com.example.joboffermicroservice.domain.*;
 import org.springframework.data.domain.Page;
