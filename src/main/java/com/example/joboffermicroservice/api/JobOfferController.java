@@ -93,12 +93,15 @@ public class JobOfferController {
     // --- Helpers ---
 
     private JobOfferResponse toResponse(JobOffer offer) {
-        List<SalaryEntryResponse> salaries = offer.getSalaryEntries().stream()
-                .map(e -> new SalaryEntryResponse(e.getId(), e.getType(), e.getAmount(), e.getCurrency()))
-                .toList();
-        List<BonusEntryResponse> bonuses = offer.getBonusEntries().stream()
-                .map(e -> new BonusEntryResponse(e.getId(), e.getType(), e.getAmount(), e.getCurrency()))
-                .toList();
+        Compensation compensation = offer.getCompensation();
+        List<SalaryEntryResponse> salaries = compensation == null ? List.of() :
+                compensation.salaryEntries().stream()
+                        .map(e -> new SalaryEntryResponse(e.getType(), e.getAmount(), e.getCurrency()))
+                        .toList();
+        List<BonusEntryResponse> bonuses = compensation == null ? List.of() :
+                compensation.bonusEntries().stream()
+                        .map(e -> new BonusEntryResponse(e.getType(), e.getAmount(), e.getCurrency()))
+                        .toList();
         return new JobOfferResponse(
                 offer.getId(), offer.getCompanyId(), offer.getTitle(), offer.getStatus(),
                 offer.getLocationType(), offer.getAddress(), salaries, bonuses,
@@ -106,6 +109,7 @@ public class JobOfferController {
                 offer.getAvailableTransitions()
         );
     }
+
 
 
 }

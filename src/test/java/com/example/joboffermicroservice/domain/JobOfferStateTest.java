@@ -1,11 +1,11 @@
 package com.example.joboffermicroservice.domain;
 
 import com.example.joboffermicroservice.domain.exception.IllegalStateTransitionException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,13 +19,13 @@ class JobOfferStateTest {
     @BeforeEach
     void setup() {
         companyId = UUID.randomUUID();
-        completeOffer = new JobOffer(companyId, "Senior Dev", LocationType.COMPANY_ADDRESS, null);
-        completeOffer.getSalaryEntries().add(new SalaryEntry(completeOffer, SalaryType.MONTHLY, new BigDecimal("5000"), "EUR"));
-
-        incompleteOffer = new JobOffer(companyId, "Junior Dev", LocationType.COMPANY_ADDRESS, null);
+        Compensation compensation = new Compensation(
+                List.of(new SalaryEntry(SalaryType.MONTHLY, new BigDecimal("5000"), "EUR")),
+                List.of()
+        );
+        completeOffer = new JobOffer(companyId, "Senior Dev", LocationType.COMPANY_ADDRESS, null, compensation);
+        incompleteOffer = new JobOffer(companyId, "Junior Dev", LocationType.COMPANY_ADDRESS, null, null);
     }
-
-    // --- submit() happy paths ---
 
     @Test
     void submit_allFlagsFalse_publishes() {
@@ -62,13 +62,14 @@ class JobOfferStateTest {
         assertThrows(IllegalArgumentException.class, () -> incompleteOffer.submit(config));
     }
 
-    // --- finalize() ---
-
     @Test
     void finalize_completeOffer_allFlagsFalse_publishes() {
         CompanyConfig config = new CompanyConfig(companyId, false, true, false);
-        incompleteOffer.submit(config); // goes to TO_FINALIZE
-        incompleteOffer.getSalaryEntries().add(new SalaryEntry(incompleteOffer, SalaryType.MONTHLY, new BigDecimal("3000"), "EUR"));
+        incompleteOffer.submit(config); 
+        incompleteOffer.setCompensation(new Compensation(
+                List.of(new SalaryEntry(SalaryType.MONTHLY, new BigDecimal("3000"), "EUR")),
+                List.of()
+        ));
         incompleteOffer.finalize(config);
         assertEquals(JobOfferStatus.PUBLISHED, incompleteOffer.getStatus());
     }
@@ -76,16 +77,14 @@ class JobOfferStateTest {
     @Test
     void finalize_stillIncomplete_throwsException() {
         CompanyConfig config = new CompanyConfig(companyId, false, true, false);
-        incompleteOffer.submit(config); // goes to TO_FINALIZE
+        incompleteOffer.submit(config); 
         assertThrows(IllegalArgumentException.class, () -> incompleteOffer.finalize(config));
     }
-
-    // --- reject() ---
 
     @Test
     void reject_fromApprove_goesBackToDraft() {
         CompanyConfig config = new CompanyConfig(companyId, true, false, false);
-        completeOffer.submit(config); // TO_APPROVE
+        completeOffer.submit(config); 
         completeOffer.reject();
         assertEquals(JobOfferStatus.DRAFT, completeOffer.getStatus());
     }
@@ -95,12 +94,10 @@ class JobOfferStateTest {
         assertThrows(IllegalStateTransitionException.class, () -> completeOffer.reject());
     }
 
-    // --- close() / expire() ---
-
     @Test
     void close_fromPublished_closes() {
         CompanyConfig config = new CompanyConfig(companyId, false, false, false);
-        completeOffer.submit(config); // PUBLISHED
+        completeOffer.submit(config);
         completeOffer.close();
         assertEquals(JobOfferStatus.CLOSED, completeOffer.getStatus());
     }
@@ -108,12 +105,10 @@ class JobOfferStateTest {
     @Test
     void expire_fromPublished_closes() {
         CompanyConfig config = new CompanyConfig(companyId, false, false, false);
-        completeOffer.submit(config); // PUBLISHED
+        completeOffer.submit(config);
         completeOffer.expire();
         assertEquals(JobOfferStatus.CLOSED, completeOffer.getStatus());
     }
-
-    // --- publishedAt ---
 
     @Test
     void publishedAt_isNullBeforePublishing() {

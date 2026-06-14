@@ -1,13 +1,13 @@
 package com.example.joboffermicroservice.domain;
 
 import com.example.joboffermicroservice.domain.exception.IllegalStateTransitionException;
-
-
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "job_offers")
@@ -28,11 +28,10 @@ public class JobOffer {
     @Embedded
     private Address address;
 
-    @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SalaryEntry> salaryEntries = new ArrayList<>();
-
-    @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BonusEntry> bonusEntries = new ArrayList<>();
+    @Convert(converter = CompensationConverter.class)
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Compensation compensation;
 
     private Instant createdAt;
     private Instant updatedAt;
@@ -40,12 +39,13 @@ public class JobOffer {
 
     protected JobOffer() {}
 
-    public JobOffer(UUID companyId, String title, LocationType locationType, Address address) {
+    public JobOffer(UUID companyId, String title, LocationType locationType, Address address, Compensation compensation) {
         this.id = UUID.randomUUID();
         this.companyId = companyId;
         this.title = title;
         this.locationType = locationType;
         this.address = address;
+        this.compensation = compensation;
         this.status = JobOfferStatus.DRAFT;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
@@ -70,7 +70,6 @@ public class JobOffer {
         this.updatedAt = Instant.now();
     }
 
-
     public void finalize(CompanyConfig config) {
         if (this.status != JobOfferStatus.TO_FINALIZE)
             throw new IllegalStateTransitionException("Cannot finalize from status: " + this.status);
@@ -81,7 +80,6 @@ public class JobOffer {
         else { this.status = JobOfferStatus.PUBLISHED; this.publishedAt = Instant.now(); }
         this.updatedAt = Instant.now();
     }
-
 
     public void approve(CompanyConfig config) {
         if (this.status != JobOfferStatus.TO_APPROVE)
@@ -125,9 +123,8 @@ public class JobOffer {
     private boolean isComplete() {
         return title != null && !title.isBlank()
             && locationType != null
-            && (!salaryEntries.isEmpty() || !bonusEntries.isEmpty());
+            && compensation != null && compensation.hasAtLeastOneEntry();
     }
-
 
     // --- Computed ---
 
@@ -142,8 +139,6 @@ public class JobOffer {
         };
     }
 
-
-
     // --- Getters ---
 
     public UUID getId() { return id; }
@@ -152,8 +147,7 @@ public class JobOffer {
     public JobOfferStatus getStatus() { return status; }
     public LocationType getLocationType() { return locationType; }
     public Address getAddress() { return address; }
-    public List<SalaryEntry> getSalaryEntries() { return salaryEntries; }
-    public List<BonusEntry> getBonusEntries() { return bonusEntries; }
+    public Compensation getCompensation() { return compensation; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getPublishedAt() { return publishedAt; }
@@ -161,4 +155,5 @@ public class JobOffer {
     public void setTitle(String title) { this.title = title; this.updatedAt = Instant.now(); }
     public void setLocationType(LocationType locationType) { this.locationType = locationType; this.updatedAt = Instant.now(); }
     public void setAddress(Address address) { this.address = address; this.updatedAt = Instant.now(); }
+    public void setCompensation(Compensation compensation) { this.compensation = compensation; this.updatedAt = Instant.now(); }
 }

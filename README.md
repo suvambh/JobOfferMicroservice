@@ -1,1 +1,61 @@
-# JobOfferMicroservice
+# Job Offer Microservice
+
+A RESTful microservice for managing job offer lifecycles in a staffing platform.
+
+## How to Run Locally
+
+```bash
+docker-compose up --build
+```
+
+The API will be available at `http://localhost:8080`.
+Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+
+---
+
+## Key Architectural Decisions
+
+### Project Structure
+The project is split into three packages:
+- `domain/` — entities, value objects, enums, repositories, and domain exceptions. Business logic lives here.
+- `application/` — service layer orchestrating domain logic and persistence.
+- `api/` — controllers, DTOs (as records), and global exception handling.
+
+This separation ensures the domain model stays independent of HTTP concerns, and the service layer stays independent of HTTP semantics.
+
+### Domain Modeling
+- `JobOffer` is the aggregate root. `SalaryEntry` and `BonusEntry` are value objects owned by a `Compensation` wrapper.
+- `Compensation` is stored as a single `JSONB` column on `job_offers`, avoiding joins and N+1 queries on list endpoints.
+- `Address` is a value object mapped with `@Embeddable` — stored as flat columns on `job_offers`, trading normalization for simplicity.
+- UUIDs are generated in Java (not the DB) to allow ID assignment before persistence.
+
+### State Machine
+State transitions are implemented as methods on `JobOffer` (e.g. `submit()`, `approve()`). Each method validates the current state and throws `IllegalStateTransitionException` if the transition is invalid.
+
+`CompanyConfig` flags control which intermediate states are skipped:
+- `partialSaveEnabled` → enables `TO_FINALIZE`
+- `approvalRequired` → enables `TO_APPROVE`
+- `manualPostingRequired` → enables `TO_POST`
+
+If no config exists for a company, all flags default to `false` — offers go straight to `PUBLISHED` on submit.
+Config changes affect future transitions only — offers already in-flight keep their current state.
+
+### API Design
+- Dedicated `POST /{id}/{action}` endpoints per transition (e.g. `/submit`, `/approve`) rather than a generic `PATCH /status` — makes intent explicit and easier to secure individually.
+- `availableTransitions` is a computed field on `GET /{id}`, returning action names (e.g. `["submit", "approve"]`) that map directly to endpoint URLs.
+- Global exception handler maps domain exceptions to consistent HTTP responses: `404` for not found, `409` for illegal transitions, `400` for validation errors.
+
+### Data Layer
+- Schema managed with Flyway migrations; `ddl-auto=validate` ensures the schema and entity model stay in sync.
+- Compensation (salary and bonus entries) stored as `JSONB` — always read/written with the offer, never queried independently.
+- Indexes on `company_id`, `status`, and composite `(company_id, status)` for efficient list queries.
+
+---
+
+## What I'd Improve With More Time
+
+- **Partial update:** Current `PUT` requires all fields; a `PATCH` endpoint would better support `TO_FINALIZE` partial saves.
+- **`expire()` vs `close()`:** Both transition to `CLOSED` — would add a `closureReason` field to distinguish them.
+- **Multi-tenancy:** Row-level security or tenant isolation for production use.
+- **Optimistic locking:** Add `@Version` to `JobOffer` to handle concurrent transitions safely.
+- **More integration tests:** Cover approval workflow, rejection and resubmit, and config flag changes.
