@@ -5,7 +5,7 @@ A RESTful microservice for managing job offer lifecycles in a staffing platform.
 ## How to Run Locally
 
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
 
 The API will be available at `http://localhost:8080`.
@@ -53,9 +53,10 @@ Config changes affect future transitions only — offers already in-flight keep 
 ---
 
 ## What I'd Improve With More Time
-
+- **Available Transitions:** Modify to reflect only transitions that are actually executable, taking into account the company workflow configuration and offer completeness.
+- **Unit Tests:** To test available transitions with config changes. 
 - **Partial update:** Current `PUT` requires all fields; a `PATCH` endpoint would better support `TO_FINALIZE` partial saves.
-- **`expire()` vs `close()`:** Both transition to `CLOSED` — would add a `closureReason` field to distinguish them.
-- **Multi-tenancy:** Row-level security or tenant isolation for production use.
+- **`expire()` vs `close()`:** Both transition to `CLOSED` — would add a `closureReason` field to distinguish them and an expiresAt date field on the offer to enable automatic expiry via a scheduled job.
 - **Optimistic locking:** Add `@Version` to `JobOffer` to handle concurrent transitions safely.
-- **More integration tests:** Cover approval workflow, rejection and resubmit, and config flag changes.
+- **More integration tests:** Extend the basic tests to cover approval workflow, rejection and resubmit, and config flag changes.
+  
