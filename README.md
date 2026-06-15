@@ -49,6 +49,9 @@ Available Transitions thus are chosen to be state-driven for practicality — th
 - Dedicated `POST /{id}/{action}` endpoints per transition (e.g. `/submit`, `/approve`) rather than a generic `PATCH /status` — makes intent explicit for state machines and easier to secure individually.
 - `availableTransitions` is a computed field on `GET /{id}`, returning action names (e.g. `["submit", "approve"]`) that map directly to endpoint URLs.
 - Global exception handler maps domain exceptions to consistent HTTP responses: `404` for not found, `409` for illegal transitions, `400` for validation errors.
+- Input validation happens before business logic — domain objects are only created from already-valid data.
+
+
 
 ### Data Layer
 - Schema managed with Flyway migrations; `ddl-auto=validate` ensures the schema and entity model stay in sync.
