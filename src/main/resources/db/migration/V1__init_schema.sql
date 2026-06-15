@@ -18,23 +18,13 @@ CREATE TABLE job_offers (
     city VARCHAR(100),
     region VARCHAR(100),
     country_code VARCHAR(2),
+    compensation JSONB,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     published_at TIMESTAMP
 );
 
-CREATE TABLE salary_entries (
-    id UUID PRIMARY KEY,
-    job_offer_id UUID NOT NULL REFERENCES job_offers(id),
-    type VARCHAR(50) NOT NULL,
-    amount NUMERIC(19,2) NOT NULL,
-    currency VARCHAR(3) NOT NULL
-);
 
-CREATE TABLE bonus_entries (
-    id UUID PRIMARY KEY,
-    job_offer_id UUID NOT NULL REFERENCES job_offers(id),
-    type VARCHAR(50) NOT NULL,
-    amount NUMERIC(19,2) NOT NULL,
-    currency VARCHAR(3) NOT NULL
-);
+CREATE INDEX idx_job_offers_company_id ON job_offers(company_id);
+CREATE INDEX idx_job_offers_status ON job_offers(status);
+CREATE INDEX idx_job_offers_company_status ON job_offers(company_id, status);

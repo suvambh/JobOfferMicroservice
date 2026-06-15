@@ -30,6 +30,7 @@ This separation ensures the domain model stays independent of HTTP concerns, and
 - UUIDs are generated in Java (not the DB) to allow ID assignment before persistence.
 
 ### State Machine
+
 State transitions are implemented as methods on `JobOffer` (e.g. `submit()`, `approve()`). Each method validates the current state and throws `IllegalStateTransitionException` if the transition is invalid.
 
 `CompanyConfig` flags control which intermediate states are skipped:
@@ -40,8 +41,12 @@ State transitions are implemented as methods on `JobOffer` (e.g. `submit()`, `ap
 If no config exists for a company, all flags default to `false` — offers go straight to `PUBLISHED` on submit.
 Config changes affect future transitions only — offers already in-flight keep their current state.
 
+Available Transitions thus are chosen to be state-driven for practicality — the available actions depend only on the current status, since config already determined which states are reachable.
+
+
+
 ### API Design
-- Dedicated `POST /{id}/{action}` endpoints per transition (e.g. `/submit`, `/approve`) rather than a generic `PATCH /status` — makes intent explicit and easier to secure individually.
+- Dedicated `POST /{id}/{action}` endpoints per transition (e.g. `/submit`, `/approve`) rather than a generic `PATCH /status` — makes intent explicit for state machines and easier to secure individually.
 - `availableTransitions` is a computed field on `GET /{id}`, returning action names (e.g. `["submit", "approve"]`) that map directly to endpoint URLs.
 - Global exception handler maps domain exceptions to consistent HTTP responses: `404` for not found, `409` for illegal transitions, `400` for validation errors.
 
@@ -52,11 +57,18 @@ Config changes affect future transitions only — offers already in-flight keep 
 
 ---
 
+## Testing 
+- **Unit tests:** State machine logic tested directly on `JobOffer` domain objects. 
+- **Integration tests:** Full API lifecycle tested with MockMvc and Testcontainers (basic functionality tests), covering offer creation, validation, and state transitions.
+
+---
+
 ## What I'd Improve With More Time
-- **Available Transitions:** Modify to reflect only transitions that are actually executable, taking into account the company workflow configuration and offer completeness.
-- **Unit Tests:** To test available transitions with config changes. 
+- **Available Transitions:** Modify to reflect only transitions that are executable, taking into account the company workflow configuration and offer completeness.
+- **Unit Tests:** Extend to cover more business logic. 
 - **Partial update:** Current `PUT` requires all fields; a `PATCH` endpoint would better support `TO_FINALIZE` partial saves.
 - **`expire()` vs `close()`:** Both transition to `CLOSED` — would add a `closureReason` field to distinguish them and an expiresAt date field on the offer to enable automatic expiry via a scheduled job.
 - **Optimistic locking:** Add `@Version` to `JobOffer` to handle concurrent transitions safely.
+- **Transactional boundaries:** Add `@Transactional` on service methods to ensure state transitions and DB saves are atomic.
 - **More integration tests:** Extend the basic tests to cover approval workflow, rejection and resubmit, and config flag changes.
   
